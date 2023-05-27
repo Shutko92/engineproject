@@ -16,9 +16,19 @@ spring:
 
 indexing-settings:
   sites:
-    - url: https://www.lenta.ru
-      name: Лента.ру
-    - url: https://www.skillbox.ru
-      name: Skillbox
-    - url: https://www.playback.ru
-      name: PlayBack.Ru
+   - url: http://www.playback.ru/
+     name: playback
+   - url: https://volochek.life/
+     name: volochek
+#    - url: https://www.lenta.ru
+#      name: Лента.ру
+#    - url: https://www.skillbox.ru
+#      name: Skillbox
+#    - url: https://www.playback.ru
+#      name: PlayBack.Ru
+
+jsoup:
+  user-agent: searchBotProject
+  referrer: http://www.google.com
+  timeout_min: 50
+  timeout_max: 150
