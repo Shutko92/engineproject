@@ -3,7 +3,6 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.UnsupportedMimeTypeException;
-import org.springframework.beans.factory.annotation.Autowired;
 import searchengine.dto.indexing.PageInfo;
 import searchengine.model.*;
 
@@ -19,18 +18,15 @@ import java.util.stream.Collectors;
 public class UrlParser extends RecursiveAction {
     private final Integer siteId;
     private final String path;
-    @Autowired
     private final transient SiteRepository siteRepository;
-    @Autowired
     private final transient PageRepository pageRepository;
-    @Autowired
     private final IndexingService indexingService;
     private final HtmlParser htmlParser;
     private final boolean isFirstAction;
 
     @Override
     protected void compute() {
-        if (indexingService.isStopFlag()) {
+        if (IndexingService.isStopFlag()) {
             return;
         }
         if (isNotFailed(siteId) && isNotVisited(siteId, path)) {
@@ -98,7 +94,7 @@ public class UrlParser extends RecursiveAction {
             PageInfo pageInfo = htmlParser.getPageInfo(site.getUrl() + path);
             if (isNotVisited(siteId, path)) {
                 return Optional.of(pageRepository.save(PageEntity.builder()
-                        .siteId(site)
+                        .site(site)
                         .path(path)
                         .code(pageInfo.getStatusCode())
                         .content(pageInfo.getContent())

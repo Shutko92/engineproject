@@ -7,6 +7,7 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.model.*;
 
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -16,29 +17,24 @@ import java.util.concurrent.ForkJoinPool;
 @Service
 @RequiredArgsConstructor
 public class IndexingService {
-
     private final SitesList sites;
     @Autowired
     private SiteRepository siteRepository;
-    public static boolean stopFlag = false;
     @Autowired
     private final PageRepository pageRepository;
-    IndexingService indexingservice;
-    @Autowired
+    public static boolean stopFlag = false;
     HtmlParser htmlParser;
-
+    @Transactional
     public void readLinks() {
         List<Site> sitesList = sites.getSites();
         for (Site site : sitesList) {
 
             stopFlag = false;
 
-            SiteEntity siteSeted = indexingBegin(site);
-            SiteEntity referenceById = siteRepository.findSiteByUrl(site.getUrl());
-            if (referenceById.getUrl() != null) {
-                siteRepository.deleteById(siteSeted.getId());
+            if (siteRepository.findSiteByUrl(site.getUrl()) != null) {
+                siteRepository.deleteSiteByUrl(site.getUrl());
             }
-
+            SiteEntity siteToIndex = indexingBegin(site);
 //            log.info("Start indexing");
 //            if (existsIndexingSite()) {
 //                log.warn("Indexing already start");
@@ -46,17 +42,18 @@ public class IndexingService {
 //            }
 //
 //            deleteSites();
-            //code delete pages method
+//            code delete pages method
 
-            Thread thread = new Thread(()->new ForkJoinPool().invoke(
-                    new UrlParser(siteSeted.getId(), siteSeted.getUrl(), siteRepository, pageRepository, indexingservice,htmlParser, true)));
+            Thread thread = new Thread(()-> {
+                new ForkJoinPool().invoke(
+                        new UrlParser(siteToIndex.getId(), siteToIndex.getUrl(), siteRepository, pageRepository, this, htmlParser, true));
+            });
             thread.start();
             try {
                 thread.join();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-
             ConcurrentHashMap<String, Set<String>> linkMap = WebPageScraper.getLinkMap();
         }
     }
@@ -71,13 +68,9 @@ public class IndexingService {
         return siteEntity;
     }
 
-    public boolean isStopFlag() {
+    public static boolean isStopFlag() {
         return stopFlag;
     }
-//
-//    public void setStopFlag(boolean stopFlag) {
-//        this.stopFlag = stopFlag;
-//    }
 
 //    private void deleteSites() {
 //        log.info("Delete all sites");

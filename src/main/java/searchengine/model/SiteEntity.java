@@ -28,6 +28,6 @@ public class SiteEntity {
     private String url;
     @Column(columnDefinition = "VARCHAR(255)", nullable = false)
     private String name;//site name
-    @OneToMany(mappedBy = "siteId", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
     private List<PageEntity> pages = new ArrayList<>();
 }

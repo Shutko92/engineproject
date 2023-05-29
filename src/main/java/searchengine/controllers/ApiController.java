@@ -45,11 +45,7 @@ public class ApiController {
         if (!siteRepository.existsByStatus(Status.INDEXING)) {
             return new IndexingResponse(false, "Индексация не запущена");
         }
-//        indexingService.setStopFlag(true);
         IndexingService.stopFlag = true;
         return new IndexingResponse(true);
     }
 }
-//постоянное обновление времени
-//ошибка и failed
-//проверка в бд повторяющихся ссылок / заход по ссылкам

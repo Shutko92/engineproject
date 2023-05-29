@@ -4,20 +4,21 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import javax.persistence.Index;
 
 @Entity
 @Setter
 @Getter
 @Table(name = "pages", indexes = {@Index(name = "idx_page_path", columnList = "path", unique = true)},
-uniqueConstraints = @UniqueConstraint(columnNames = {"site_id", "path"}))
+uniqueConstraints = @UniqueConstraint(columnNames = {"site", "path"}))
 public class PageEntity {
     @Id
     @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(columnDefinition = "INT", name = "site_id", nullable = false)
-    private SiteEntity siteId;
+    @JoinColumn(columnDefinition = "INT", name = "site", nullable = false)
+    private SiteEntity site;
     @Column(columnDefinition = "TEXT", nullable = false)
     private String path;//needs index
     @Column(columnDefinition = "INT", nullable = false)
@@ -31,13 +32,13 @@ public class PageEntity {
 
     public static class PageBuilder {
         private int id;
-        private SiteEntity siteId;
+        private SiteEntity site;
         private String path;
         private int code;
         private String content;
 
-        public PageBuilder siteId(SiteEntity siteId) {
-            this.siteId = siteId;
+        public PageBuilder site(SiteEntity site) {
+            this.site = site;
             return this;
         }
         public PageBuilder path(String path) {
