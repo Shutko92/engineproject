@@ -1,7 +1,6 @@
 package searchengine.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -11,7 +10,10 @@ import java.util.List;
 @Entity
 @Setter
 @Getter
+@Builder
 @Table(name = "sites")
+@NoArgsConstructor
+@AllArgsConstructor
 public class SiteEntity {
     @Id
     @Column(nullable = false)
@@ -30,4 +32,6 @@ public class SiteEntity {
     private String name;//site name
     @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
     private List<PageEntity> pages = new ArrayList<>();
+    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    private List<Lemma> lemmas = new ArrayList<>();
 }

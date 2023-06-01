@@ -23,7 +23,6 @@ public class WebPageScraper extends RecursiveTask<Map<String, Set<String>>> {
     private static CopyOnWriteArraySet<String> linkSet = new CopyOnWriteArraySet<>();
     private static ConcurrentHashMap<String, Set<String>> linkMap = new ConcurrentHashMap<>();
     private String currentPage = "";
-    @Autowired
     private PageRepository pageRepository;
     IndexingService indexingService;
     private JsoupConfig jsoupConfig;

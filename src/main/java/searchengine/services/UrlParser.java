@@ -3,6 +3,7 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.UnsupportedMimeTypeException;
+import org.springframework.beans.factory.annotation.Autowired;
 import searchengine.dto.indexing.PageInfo;
 import searchengine.model.*;
 
