@@ -17,11 +17,12 @@ import java.util.concurrent.ForkJoinPool;
 public class IndexingService {
     private final SitesList sites;
     @Autowired
-    private SiteRepository siteRepository;
+    private final SiteRepository siteRepository;
     @Autowired
     private final PageRepository pageRepository;
     public static boolean stopFlag = false;
-    HtmlParser htmlParser;
+    @Autowired
+    private final HtmlParser htmlParser;
 
     public void readLinks() {
         List<Site> sitesList = sites.getSites();
