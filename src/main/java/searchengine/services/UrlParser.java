@@ -3,10 +3,10 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.UnsupportedMimeTypeException;
-import org.springframework.beans.factory.annotation.Autowired;
 import searchengine.dto.indexing.PageInfo;
 import searchengine.model.*;
 
+import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -28,6 +28,7 @@ public class UrlParser extends RecursiveAction {
     @Override
     protected void compute() {
         if (IndexingService.isStopFlag()) {
+            failed(siteId, "Индексация остановлена пользователем");
             return;
         }
         if (isNotFailed(siteId) && isNotVisited(siteId, path)) {
@@ -37,7 +38,6 @@ public class UrlParser extends RecursiveAction {
 
                 if (optionalPage.isPresent()) {
                     PageEntity page = optionalPage.get();
-                    log.warn("ATTEMPT TO SAVE" + page.getContent());
 
 //                    if (page.getCode() < 400) {
 //                        lemmaService.findAndSave(page);
@@ -95,7 +95,6 @@ public class UrlParser extends RecursiveAction {
             SiteEntity site = getPersistSite(siteId);
             PageInfo pageInfo = htmlParser.getPageInfo(site.getUrl() + path);
             if (isNotVisited(siteId, path)) {
-//                log.info(pageInfo.getContent());
                 return Optional.of(pageRepository.save(PageEntity.builder()
                         .site(site)
                         .path(path)

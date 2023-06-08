@@ -32,8 +32,8 @@ public class IndexingService {
             if (siteRepository.findSiteByUrl(site.getUrl()) != null) {
                 siteRepository.deleteSiteByUrl(site.getUrl());
             }
-
             String url = site.getUrl();
+
             log.info("Save site with url: {}", url);
             siteRepository.save(SiteEntity.builder()
                     .name(site.getName())
