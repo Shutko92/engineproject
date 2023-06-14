@@ -6,7 +6,6 @@ import org.jsoup.UnsupportedMimeTypeException;
 import searchengine.dto.indexing.PageInfo;
 import searchengine.model.*;
 
-import javax.transaction.Transactional;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;

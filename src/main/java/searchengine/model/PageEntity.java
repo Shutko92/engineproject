@@ -19,16 +19,15 @@ public class PageEntity {
     @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
     @JoinColumn(columnDefinition = "INT", name = "site", nullable = false)
     private SiteEntity site;
-    @Column(columnDefinition = "TEXT", nullable = false)
+    @Column(nullable = false)
     private String path;//needs index
     @Column(columnDefinition = "INT", nullable = false)
     private int code;
     @Column(columnDefinition = "MEDIUMTEXT", nullable = false)
     private String content;
-
 
     public PageEntity(SiteEntity site, String path, int code, String content) {
         this.site = site;
@@ -42,7 +41,6 @@ public class PageEntity {
     }
 
     public static class PageBuilder {
-        private int id;
         private SiteEntity site;
         private String path;
         private int code;

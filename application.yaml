@@ -6,15 +6,12 @@ spring:
     username: root
     password: 46Y4y4gc
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
-    logging:
-    level:
-      root: TRACE
   jpa:
     properties:
       hibernate:
       dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     show-sql: true
 
 indexing-settings:

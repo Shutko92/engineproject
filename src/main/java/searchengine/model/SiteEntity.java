@@ -30,8 +30,8 @@ public class SiteEntity {
     private String url;
     @Column(columnDefinition = "VARCHAR(255)", nullable = false)
     private String name;//site name
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
     private List<PageEntity> pages = new ArrayList<>();
-    @OneToMany(mappedBy = "site", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "site", cascade = CascadeType.REMOVE)
     private List<Lemma> lemmas = new ArrayList<>();
 }

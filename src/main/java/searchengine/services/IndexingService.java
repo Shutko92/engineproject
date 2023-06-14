@@ -45,15 +45,6 @@ public class IndexingService {
 
         for (SiteEntity site : siteRepository.findAll()) {
 
-//            SiteEntity siteToIndex = indexingBegin(site);
-//            log.info("Start indexing");
-//            if (existsIndexingSite()) {
-//                log.warn("Indexing already start");
-//                throw new BadRequestException("Индексация уже запущена");
-//            }
-//
-//            deleteSites();
-
             Thread thread = new Thread(()-> {
                 new ForkJoinPool().invoke(
                         new UrlParser(site.getId(), site.getUrl(), siteRepository, pageRepository, this, htmlParser, true));
@@ -72,7 +63,14 @@ public class IndexingService {
     public static boolean isStopFlag() {
         return stopFlag;
     }
-
+//            SiteEntity siteToIndex = indexingBegin(site);
+//            log.info("Start indexing");
+//            if (existsIndexingSite()) {
+//                log.warn("Indexing already start");
+//                throw new BadRequestException("Индексация уже запущена");
+//            }
+//
+//            deleteSites();
 //    private void deleteSites() {
 //        log.info("Delete all sites");
 //        indexRepository.deleteAllInBatch();

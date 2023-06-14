@@ -9,7 +9,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class IndexingResponse {
     private boolean result;
-    private String Error;
+    private String error;
 
     public IndexingResponse(boolean result) {
         this.result = result;
