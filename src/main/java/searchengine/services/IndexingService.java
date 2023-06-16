@@ -8,6 +8,7 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.model.*;
 
+import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -23,14 +24,14 @@ public class IndexingService {
     public static boolean stopFlag = false;
     @Autowired
     private final HtmlParser htmlParser;
-
+@Transactional
     public void readLinks() {
         List<Site> sitesList = sites.getSites();
 
         for (Site site : sitesList) {
 
-            if (siteRepository.findSiteByUrl(site.getUrl()) != null) {
-                siteRepository.deleteSiteByUrl(site.getUrl());
+            if (siteRepository.findByUrl(site.getUrl()) != null) {
+                siteRepository.removeByUrl(site.getUrl());
             }
             String url = site.getUrl();
 
@@ -44,19 +45,8 @@ public class IndexingService {
         }
 
         for (SiteEntity site : siteRepository.findAll()) {
-
-            Thread thread = new Thread(()-> {
-                new ForkJoinPool().invoke(
-                        new UrlParser(site.getId(), site.getUrl(), siteRepository, pageRepository, this, htmlParser, true));
-            });
-
-            thread.start();
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-//            ConcurrentHashMap<String, Set<String>> linkMap = WebPageScraper.getLinkMap();
+            new Thread(()-> new ForkJoinPool().invoke(
+                    new UrlParser(site.getId(), site.getUrl(), siteRepository, pageRepository, this, htmlParser, true))).start();
         }
     }
 

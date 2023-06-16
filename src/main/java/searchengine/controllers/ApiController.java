@@ -45,7 +45,7 @@ public class ApiController {
         if (!siteRepository.existsByStatus(Status.INDEXING)) {
             return new IndexingResponse(false, "Индексация не запущена");
         }
-        IndexingService.stopFlag = true;
+        indexingService.stopFlag = true;
         return new IndexingResponse(true);
     }
 }

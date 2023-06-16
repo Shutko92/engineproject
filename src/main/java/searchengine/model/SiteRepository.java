@@ -5,8 +5,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface SiteRepository extends JpaRepository<SiteEntity, Integer> {
-    SiteEntity findSiteByUrl(String url);
+    SiteEntity findByUrl(String url);
     boolean existsByStatus(Status status);
     boolean existsByIdAndStatus(Integer id, Status status);
-    void deleteSiteByUrl(String url);
+    void removeByUrl(String url);
 }

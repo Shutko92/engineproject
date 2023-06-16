@@ -26,7 +26,7 @@ public class UrlParser extends RecursiveAction {
 
     @Override
     protected void compute() {
-        if (IndexingService.isStopFlag()) {
+        if (indexingService.isStopFlag()) {
             failed(siteId, "Индексация остановлена пользователем");
             return;
         }
@@ -82,6 +82,7 @@ public class UrlParser extends RecursiveAction {
     }
 
     private void failed(Integer siteId, String error) {
+        indexingService.stopFlag = false;
         log.warn("Failed indexing site with id {}: {}", siteId, error);
         SiteEntity persistSite = getPersistSite(siteId);
         persistSite.setLastError(error);
@@ -107,6 +108,7 @@ public class UrlParser extends RecursiveAction {
     }
 
     private void indexed(Integer siteId) {
+        indexingService.stopFlag = false;
         SiteEntity persistSite = getPersistSite(siteId);
         persistSite.setStatusTime(LocalDateTime.now());
         persistSite.setStatus(Status.INDEXED);
