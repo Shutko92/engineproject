@@ -16,16 +16,8 @@ spring:
 
 indexing-settings:
   sites:
-   - url: http://www.playback.ru/
-     name: playback
-   - url: https://volochek.life/
-     name: volochek
-#    - url: https://www.lenta.ru
-#      name: Лента.ру
-#    - url: https://www.skillbox.ru
-#      name: Skillbox
-#    - url: https://www.playback.ru
-#      name: PlayBack.Ru
+     - url: https://ipfran.ru/
+       name: ipfran
 
 jsoup:
   user-agent: searchBotProject

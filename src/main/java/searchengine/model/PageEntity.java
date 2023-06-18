@@ -19,7 +19,7 @@ public class PageEntity {
     @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    @ManyToOne(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(columnDefinition = "INT", name = "site", nullable = false)
     private SiteEntity site;
     @Column(nullable = false)

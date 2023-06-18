@@ -8,7 +8,6 @@ import searchengine.config.Site;
 import searchengine.config.SitesList;
 import searchengine.model.*;
 
-import javax.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.ForkJoinPool;
@@ -24,7 +23,7 @@ public class IndexingService {
     public static boolean stopFlag = false;
     @Autowired
     private final HtmlParser htmlParser;
-@Transactional
+
     public void readLinks() {
         List<Site> sitesList = sites.getSites();
 

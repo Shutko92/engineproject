@@ -58,7 +58,7 @@ public class UrlParser extends RecursiveAction {
             } catch (UnsupportedMimeTypeException ignore) {
             } catch (Exception e) {
                 log.error("Parser exception", e);
-                failed(siteId, "Ошибка парсинга URL: " + getPersistSite(siteId).getUrl() + path);
+                    failed(siteId, "Ошибка парсинга URL: " + getPersistSite(siteId).getUrl() + path);
             }
         }
     }
