@@ -20,13 +20,14 @@ public class UrlParser extends RecursiveAction {
     private final String path;
     private final transient SiteRepository siteRepository;
     private final transient PageRepository pageRepository;
-    private final IndexingService indexingService;
     private final HtmlParser htmlParser;
+    private final LemmaService lemmaService;
     private final boolean isFirstAction;
 
     @Override
     protected void compute() {
-        if (indexingService.isStopFlag()) {
+        if (IndexingService.isStopFlag()) {
+            lemmaService.updateLemmasFrequency(siteId);
             failed(siteId, "Индексация остановлена пользователем");
             return;
         }
@@ -38,27 +39,27 @@ public class UrlParser extends RecursiveAction {
                 if (optionalPage.isPresent()) {
                     PageEntity page = optionalPage.get();
 
-//                    if (page.getCode() < 400) {
-//                        lemmaService.findAndSave(page);
-//                    }
+                    if (page.getCode() < 400) {
+                        lemmaService.findAndSave(page);
+                    }
 
                     Set<ForkJoinTask<Void>> tasks = htmlParser.getPaths(page.getContent()).stream()
                             .map(pathFromPage -> new UrlParser(siteId, pathFromPage,
-                                    siteRepository, pageRepository, indexingService,
-//                                    lemmaService,
-                                    htmlParser, false).fork())
+                                    siteRepository, pageRepository,
+                                    htmlParser,lemmaService, false).fork())
                             .collect(Collectors.toSet());
                     tasks.forEach(ForkJoinTask::join);
 
                     if (isFirstAction && isNotFailed(siteId)) {
-//                        lemmaService.updateLemmasFrequency(siteId);
+                        lemmaService.updateLemmasFrequency(siteId);
                         indexed(siteId);
                     }
                 }
             } catch (UnsupportedMimeTypeException ignore) {
             } catch (Exception e) {
                 log.error("Parser exception", e);
-                    failed(siteId, "Ошибка парсинга URL: " + getPersistSite(siteId).getUrl() + path);
+                lemmaService.updateLemmasFrequency(siteId);
+                failed(siteId, "Ошибка парсинга URL: " + getPersistSite(siteId).getUrl() + path);
             }
         }
     }
@@ -82,7 +83,7 @@ public class UrlParser extends RecursiveAction {
     }
 
     private void failed(Integer siteId, String error) {
-        indexingService.stopFlag = false;
+        IndexingService.stopFlag = false;
         log.warn("Failed indexing site with id {}: {}", siteId, error);
         SiteEntity persistSite = getPersistSite(siteId);
         persistSite.setLastError(error);
@@ -108,7 +109,7 @@ public class UrlParser extends RecursiveAction {
     }
 
     private void indexed(Integer siteId) {
-        indexingService.stopFlag = false;
+        IndexingService.stopFlag = false;
         SiteEntity persistSite = getPersistSite(siteId);
         persistSite.setStatusTime(LocalDateTime.now());
         persistSite.setStatus(Status.INDEXED);

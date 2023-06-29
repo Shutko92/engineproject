@@ -20,7 +20,7 @@ indexing-settings:
        name: ipfran
 
 jsoup:
-  user-agent: searchBotProject
+  user_agent: searchBotProject
   referrer: http://www.google.com
   timeout_min: 50
   timeout_max: 150

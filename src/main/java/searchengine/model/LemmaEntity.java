@@ -1,15 +1,19 @@
 package searchengine.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Setter
 @Getter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "lemmas")
-public class Lemma {
+public class LemmaEntity {
     @Id
     @Column(nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,4 +25,6 @@ public class Lemma {
     private String lemma;
     @Column(nullable = false)
     private int frequency;
+    @OneToMany(mappedBy = "lemma", cascade = CascadeType.MERGE)
+    private List<IndexEntity> indexes = new ArrayList<>();
 }
