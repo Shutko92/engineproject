@@ -4,7 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.UnsupportedMimeTypeException;
 import searchengine.dto.indexing.PageInfo;
-import searchengine.model.*;
+import searchengine.model.entities.PageEntity;
+import searchengine.model.entities.SiteEntity;
+import searchengine.model.entities.Status;
+import searchengine.model.repository.PageRepository;
+import searchengine.model.repository.SiteRepository;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -27,8 +31,8 @@ public class UrlParser extends RecursiveAction {
     @Override
     protected void compute() {
         if (IndexingService.isStopFlag()) {
-            lemmaService.updateLemmasFrequency(siteId);
             failed(siteId, "Индексация остановлена пользователем");
+            lemmaService.updateLemmasFrequency(siteId);
             return;
         }
         if (isNotFailed(siteId) && isNotVisited(siteId, path)) {
@@ -51,15 +55,15 @@ public class UrlParser extends RecursiveAction {
                     tasks.forEach(ForkJoinTask::join);
 
                     if (isFirstAction && isNotFailed(siteId)) {
-                        lemmaService.updateLemmasFrequency(siteId);
                         indexed(siteId);
+                        lemmaService.updateLemmasFrequency(siteId);
                     }
                 }
             } catch (UnsupportedMimeTypeException ignore) {
             } catch (Exception e) {
                 log.error("Parser exception", e);
-                lemmaService.updateLemmasFrequency(siteId);
                 failed(siteId, "Ошибка парсинга URL: " + getPersistSite(siteId).getUrl() + path);
+                lemmaService.updateLemmasFrequency(siteId);
             }
         }
     }

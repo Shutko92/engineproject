@@ -1,4 +1,4 @@
-package searchengine.model;
+package searchengine.model.entities;
 
 import lombok.*;
 
@@ -33,5 +33,5 @@ public class SiteEntity {
     @OneToMany(mappedBy = "site", cascade = CascadeType.MERGE)
     private List<PageEntity> pages = new ArrayList<>();
     @OneToMany(mappedBy = "site", cascade = CascadeType.MERGE)
-    private List<LemmaEntity> lemmaEntities = new ArrayList<>();
+    private List<LemmaEntity> lemmas = new ArrayList<>();
 }

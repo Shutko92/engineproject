@@ -1,8 +1,9 @@
-package searchengine.model;
+package searchengine.model.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-import searchengine.config.Site;
+import searchengine.model.entities.Status;
+import searchengine.model.entities.SiteEntity;
 
 import java.util.Optional;
 

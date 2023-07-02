@@ -3,8 +3,13 @@ package searchengine.services;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import searchengine.config.Site;
-import searchengine.model.*;
+import searchengine.model.entities.IndexEntity;
+import searchengine.model.entities.LemmaEntity;
+import searchengine.model.entities.PageEntity;
+import searchengine.model.entities.SiteEntity;
+import searchengine.model.repository.IndexRepository;
+import searchengine.model.repository.LemmaRepository;
+import searchengine.model.repository.SiteRepository;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -24,16 +29,6 @@ public class LemmaService {
         String clearText = htmlParser.htmlToText(page.getContent());
         Map<String, Integer> lemmaMap = lemmaFinder.collectLemmas(clearText);
 
-//        for (Map.Entry<String, Integer> lemmaEntry : lemmaMap.entrySet()) {
-//            String key = lemmaEntry.getKey();
-//            Integer value = lemmaEntry.getValue();
-//            LemmaEntity firstLemmaRequestEntity = lemmaRepository.findByLemma(key);
-//            if (firstLemmaRequestEntity == null) {
-//                lemmaRepository.save(LemmaEntity.builder().site(page.getSite()).lemma(key).frequency(1).build());
-//            }
-//            LemmaEntity secondLemmaRequest = lemmaRepository.findByLemma(key);
-//            indexRepository.save(IndexEntity.builder().page(page).lemmaEntity(secondLemmaRequest).rank(value).build());
-//        }
         Set<LemmaEntity> lemmaSetToSave = new HashSet<>();
         Set<IndexEntity> indices = new HashSet<>();
         synchronized (lemmaRepository) {

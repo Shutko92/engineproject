@@ -1,9 +1,9 @@
-package searchengine.model;
+package searchengine.model.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
+import searchengine.model.entities.SiteEntity;
+import searchengine.model.entities.PageEntity;
 
 @Repository
 public interface PageRepository extends JpaRepository<PageEntity, Integer> {

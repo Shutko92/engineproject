@@ -4,18 +4,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import searchengine.config.Site;
 import searchengine.dto.indexing.IndexingResponse;
 import searchengine.dto.statistics.StatisticsResponse;
-import searchengine.model.PageEntity;
-import searchengine.model.SiteEntity;
-import searchengine.model.SiteRepository;
-import searchengine.model.Status;
+import searchengine.model.repository.SiteRepository;
+import searchengine.model.entities.Status;
 import searchengine.services.IndexingService;
 import searchengine.services.StatisticsService;
-
-import java.net.MalformedURLException;
-import java.net.URL;
 
 @Slf4j
 @RestController
@@ -58,20 +52,8 @@ public class ApiController {
 
     @PostMapping("/indexPage")
     public IndexingResponse indexPage(String url) {
-         String siteUrl = "";
-         String path = "/";
-        try {
-            URL gotUrl = new URL(url);
-            siteUrl = gotUrl.getProtocol() + "://" + gotUrl.getHost() + "/";
-            path = gotUrl.getPath();
-        } catch (MalformedURLException e) {
-            log.error("Error at parsing url, ", e);
-        }
 
-        path = path.trim();
-        path = path.isBlank() ? "/" : path;
-
-        boolean correct = indexingService.getPageFromUrl(siteUrl, path);
+        boolean correct = indexingService.getPageFromUrl(url);
         if (!correct) {
             return new IndexingResponse(false,"Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
         }

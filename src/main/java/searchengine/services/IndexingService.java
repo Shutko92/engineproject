@@ -5,9 +5,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
-import searchengine.model.*;
+import searchengine.dto.indexing.PageInfo;
+import searchengine.model.entities.*;
+import searchengine.model.repository.IndexRepository;
+import searchengine.model.repository.LemmaRepository;
+import searchengine.model.repository.PageRepository;
+import searchengine.model.repository.SiteRepository;
 
-import javax.transaction.Transactional;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -50,8 +57,19 @@ public class IndexingService {
         }
     }
 
-    public boolean getPageFromUrl(String siteUrl, String path) {
-        log.warn("{} should be send to index", siteUrl);
+    public boolean getPageFromUrl(String url) {
+        String siteUrl = "";
+        String path = "/";
+        try {
+            URL gotUrl = new URL(url);
+            siteUrl = gotUrl.getProtocol() + "://" + gotUrl.getHost() + "/";
+            path = gotUrl.getPath();
+        } catch (MalformedURLException e) {
+            log.error("Error at parsing url, ", e);
+        }
+
+        path = path.trim();
+        path = path.isBlank() ? "/" : path;
         Optional<SiteEntity> optional = siteRepository.findByUrlIgnoreCase(siteUrl);
         if (optional.isPresent()) {
             SiteEntity site = optional.get();
@@ -59,7 +77,7 @@ public class IndexingService {
 
             indexing(site.getId());
             deletePage(site, path);
-            runParser(site.getId(), path);
+            parsePage(site, path);
             lemmaService.findAndSave(page);
             lemmaService.updateLemmasFrequency(site.getId());
         } else {
@@ -71,26 +89,41 @@ public class IndexingService {
         return true;
     }
 
-    private void runParser(int siteId, String path) {
-        new UrlParser(siteId, path, siteRepository, pageRepository, htmlParser,lemmaService, true).fork();
+    private void parsePage(SiteEntity site, String path) {
+//        new Thread(()-> new ForkJoinPool().invoke(
+//                new UrlParser(siteId, path, siteRepository,
+//                        pageRepository, htmlParser,lemmaService, true).fork()));
+        PageInfo pageInfo = null;
+        try {
+            pageInfo = htmlParser.getPageInfo(site.getUrl() + path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        pageRepository.save(PageEntity.builder()
+                .site(site)
+                .path(path)
+                .code(pageInfo.getStatusCode())
+                .content(pageInfo.getContent())
+                .build());
     }
 
-    @Transactional
     private void deletePage(SiteEntity site, String path) {
-        PageEntity pageEntity = pageRepository.findBySiteAndPath(site, path);
+        PageEntity page = pageRepository.findBySiteAndPath(site, path);
 //        optional.ifPresent(pageRepository::delete);
-        List<IndexEntity> indexes = pageEntity.getIndexes();
+        List<IndexEntity> indexes = page.getIndexes();
         for (IndexEntity index : indexes) {
             LemmaEntity lemmaEntity = index.getLemma();
+            indexRepository.delete(index);
             if (lemmaEntity.getFrequency() <= 1) {
                 lemmaRepository.delete(lemmaEntity);
             } else {
                 lemmaEntity.setFrequency(lemmaEntity.getFrequency() - 1);
                 lemmaRepository.save(lemmaEntity);
             }
-            indexRepository.delete(index);
         }
-        pageRepository.delete(pageEntity);
+        pageRepository.delete(page);
     }
 
     private void indexing(int siteId) {
