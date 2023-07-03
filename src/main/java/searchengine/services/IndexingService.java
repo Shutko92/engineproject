@@ -73,13 +73,15 @@ public class IndexingService {
         Optional<SiteEntity> optional = siteRepository.findByUrlIgnoreCase(siteUrl);
         if (optional.isPresent()) {
             SiteEntity site = optional.get();
-            PageEntity page = pageRepository.findBySiteAndPath(site, path);
-
-            indexing(site.getId());
-            deletePage(site, path);
-            parsePage(site, path);
-            lemmaService.findAndSave(page);
-            lemmaService.updateLemmasFrequency(site.getId());
+            Optional<PageEntity> optionalPage = pageRepository.findBySiteAndPath(site, path);
+            if (optionalPage.isPresent()) {
+                PageEntity page = optionalPage.get();
+                indexing(site.getId());
+                deletePage(site, path);
+                parsePage(site, path);
+                lemmaService.findAndSave(page);
+                lemmaService.updateLemmasFrequency(site.getId());
+            }
         } else {
             log.warn("Site not found: {}", siteUrl);
             return false;
@@ -110,20 +112,24 @@ public class IndexingService {
     }
 
     private void deletePage(SiteEntity site, String path) {
-        PageEntity page = pageRepository.findBySiteAndPath(site, path);
-//        optional.ifPresent(pageRepository::delete);
-        List<IndexEntity> indexes = page.getIndexes();
-        for (IndexEntity index : indexes) {
-            LemmaEntity lemmaEntity = index.getLemma();
-            indexRepository.delete(index);
-            if (lemmaEntity.getFrequency() <= 1) {
-                lemmaRepository.delete(lemmaEntity);
-            } else {
-                lemmaEntity.setFrequency(lemmaEntity.getFrequency() - 1);
-                lemmaRepository.save(lemmaEntity);
+        Optional<PageEntity> optionalPage = pageRepository.findBySiteAndPath(site, path);
+
+        if (optionalPage.isPresent()) {
+            PageEntity page = optionalPage.get();
+            //        optional.ifPresent(pageRepository::delete);
+            List<IndexEntity> indexes = page.getIndexes();
+            for (IndexEntity index : indexes) {
+                LemmaEntity lemmaEntity = index.getLemma();
+                indexRepository.delete(index);
+                if (lemmaEntity.getFrequency() <= 1) {
+                    lemmaRepository.delete(lemmaEntity);
+                } else {
+                    lemmaEntity.setFrequency(lemmaEntity.getFrequency() - 1);
+                    lemmaRepository.save(lemmaEntity);
+                }
             }
+            pageRepository.delete(page);
         }
-        pageRepository.delete(page);
     }
 
     private void indexing(int siteId) {
