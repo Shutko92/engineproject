@@ -65,21 +65,6 @@ public class ApiController {
         return true;
     }
 }
-//    @Transactional
-//    public void deletePage(PageEntity pageEntity) {
-//        List<IndexEntity> indexes = pageEntity.getIndexes();
-//        for (IndexEntity index : indexes) {
-//            LemmaEntity lemma = index.getLemma();
-//            if (lemma.getFrequency() <= 1) {
-//                lemmaRepository.delete(lemma);
-//            } else {
-//                lemma.setFrequency(lemma.getFrequency() - 1);
-//                lemmaRepository.save(lemma);
-//            }
-//            indexRepository.delete(index);
-//        }
-//        pageRepository.delete(pageEntity);
-//    }
 
 //запись в главной таблице через дочернюю
 //таблица index

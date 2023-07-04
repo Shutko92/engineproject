@@ -2,6 +2,7 @@ package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
@@ -81,20 +82,18 @@ public class IndexingService {
                 parsePage(site, path);
                 lemmaService.findAndSave(page);
                 lemmaService.updateLemmasFrequency(site.getId());
+            } else {
+                log.warn("Page not found: {}", path);
+                return false;
             }
         } else {
             log.warn("Site not found: {}", siteUrl);
             return false;
         }
-
-        log.warn("Indexing for {}", siteUrl);
         return true;
     }
 
     private void parsePage(SiteEntity site, String path) {
-//        new Thread(()-> new ForkJoinPool().invoke(
-//                new UrlParser(siteId, path, siteRepository,
-//                        pageRepository, htmlParser,lemmaService, true).fork()));
         PageInfo pageInfo = null;
         try {
             pageInfo = htmlParser.getPageInfo(site.getUrl() + path);
@@ -119,8 +118,8 @@ public class IndexingService {
             //        optional.ifPresent(pageRepository::delete);
             List<IndexEntity> indexes = page.getIndexes();
             for (IndexEntity index : indexes) {
-                LemmaEntity lemmaEntity = index.getLemma();
                 indexRepository.delete(index);
+                LemmaEntity lemmaEntity = index.getLemma();
                 if (lemmaEntity.getFrequency() <= 1) {
                     lemmaRepository.delete(lemmaEntity);
                 } else {
