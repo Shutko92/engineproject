@@ -79,9 +79,9 @@ public class IndexingService {
                 PageEntity page = optionalPage.get();
                 indexing(site.getId());
                 deletePage(site, path);
-                parsePage(site, path);
-                lemmaService.findAndSave(page);
-                lemmaService.updateLemmasFrequency(site.getId());
+//                parsePage(site, path);
+//                lemmaService.findAndSave(page);
+//                lemmaService.updateLemmasFrequency(site.getId());
             } else {
                 log.warn("Page not found: {}", path);
                 return false;
@@ -120,7 +120,7 @@ public class IndexingService {
             for (IndexEntity index : indexes) {
                 indexRepository.delete(index);
                 LemmaEntity lemmaEntity = index.getLemma();
-                if (lemmaEntity.getFrequency() <= 1) {
+                if (lemmaEntity.getFrequency() <= 0) {
                     lemmaRepository.delete(lemmaEntity);
                 } else {
                     lemmaEntity.setFrequency(lemmaEntity.getFrequency() - 1);
