@@ -61,7 +61,7 @@ public class LemmaService {
         SiteEntity site = siteRepository.findById(siteId).orElseThrow(() -> new IllegalStateException("Site not found"));
         Set<LemmaEntity> lemmaToSave = new HashSet<>();
         Set<LemmaEntity> lemmaToDelete = new HashSet<>();
-        log.info("Start calculate lemmas frequency for site: {}", site);
+        log.info("Start lemmas frequency calculation for site: {}", site);
         for (LemmaEntity lemma : lemmaRepository.findAllBySite(site)) {
             int frequency = indexRepository.countByLemma(lemma);
             if (frequency == 0) {

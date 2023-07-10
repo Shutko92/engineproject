@@ -8,6 +8,11 @@ import searchengine.dto.statistics.DetailedStatisticsItem;
 import searchengine.dto.statistics.StatisticsData;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.dto.statistics.TotalStatistics;
+import searchengine.model.entities.SiteEntity;
+import searchengine.model.repository.IndexRepository;
+import searchengine.model.repository.LemmaRepository;
+import searchengine.model.repository.PageRepository;
+import searchengine.model.repository.SiteRepository;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +21,9 @@ import java.util.Random;
 @Service
 @RequiredArgsConstructor
 public class StatisticsServiceImpl implements StatisticsService {
-
+    private final SiteRepository siteRepository;
+    private final PageRepository pageRepository;
+    private final LemmaRepository lemmaRepository;
     private final Random random = new Random();
     private final SitesList sites;
 
@@ -30,26 +37,29 @@ public class StatisticsServiceImpl implements StatisticsService {
         };
 
         TotalStatistics total = new TotalStatistics();
-        total.setSites(sites.getSites().size());
+        List<SiteEntity> sitesList = siteRepository.findAll();
+        total.setSites(sitesList.size());
         total.setIndexing(true);
 
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
-        List<Site> sitesList = sites.getSites();
-        for(int i = 0; i < sitesList.size(); i++) {
-            Site site = sitesList.get(i);
+//        List<Site> sitesList = sites.getSites();
+
+        for (SiteEntity site : sitesList) {
+//            Site site = sitesList.get(i);
             DetailedStatisticsItem item = new DetailedStatisticsItem();
             item.setName(site.getName());
             item.setUrl(site.getUrl());
-            int pages = random.nextInt(1_000);
-            int lemmas = pages * random.nextInt(1_000);
+//            int pages = random.nextInt(1_000);
+//            int lemmas = pages * random.nextInt(1_000);
+            long pages = pageRepository.countBySite(site.getId());
+            long lemmas = lemmaRepository.countBySite(site.getId());
             item.setPages(pages);
             item.setLemmas(lemmas);
-            item.setStatus(statuses[i % 3]);
-            item.setError(errors[i % 3]);
-            item.setStatusTime(System.currentTimeMillis() -
-                    (random.nextInt(10_000)));
-            total.setPages(total.getPages() + pages);
-            total.setLemmas(total.getLemmas() + lemmas);
+            item.setStatus(String.valueOf(site.getStatus()));
+            item.setError(site.getLastError());
+            item.setStatusTime(site.getStatusTime());
+            total.setPages((total.getPages() + pages));
+            total.setLemmas((total.getLemmas() + lemmas));
             detailed.add(item);
         }
 

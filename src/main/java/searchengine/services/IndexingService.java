@@ -74,18 +74,19 @@ public class IndexingService {
         Optional<SiteEntity> optional = siteRepository.findByUrlIgnoreCase(siteUrl);
         if (optional.isPresent()) {
             SiteEntity site = optional.get();
+            indexing(site.getId());
+            deletePage(site, path);
+            parsePage(site, path);
             Optional<PageEntity> optionalPage = pageRepository.findBySiteAndPath(site, path);
             if (optionalPage.isPresent()) {
                 PageEntity page = optionalPage.get();
-                indexing(site.getId());
-                deletePage(site, path);
-//                parsePage(site, path);
-//                lemmaService.findAndSave(page);
-//                lemmaService.updateLemmasFrequency(site.getId());
+                lemmaService.findAndSave(page);
+                lemmaService.updateLemmasFrequency(site.getId());
             } else {
                 log.warn("Page not found: {}", path);
                 return false;
             }
+            indexed(site.getId());
         } else {
             log.warn("Site not found: {}", siteUrl);
             return false;
@@ -137,6 +138,11 @@ public class IndexingService {
         siteRepository.save(site);
     }
 
+    private void indexed(int siteId) {
+        SiteEntity site = siteRepository.findById(siteId).orElseThrow(()-> new IllegalStateException("Site not found"));
+        site.setStatus(Status.INDEXED);
+        siteRepository.save(site);
+    }
     public static boolean isStopFlag() {
         return stopFlag;
     }

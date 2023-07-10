@@ -1,7 +1,7 @@
 package searchengine.controllers;
 
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.indexing.IndexingResponse;
@@ -9,22 +9,18 @@ import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.repository.SiteRepository;
 import searchengine.model.entities.Status;
 import searchengine.services.IndexingService;
+import searchengine.services.SearchService;
 import searchengine.services.StatisticsService;
 
 @Slf4j
 @RestController
+@AllArgsConstructor
 @RequestMapping("/api")
 public class ApiController {
-    @Autowired
     private IndexingService indexingService;
-    @Autowired
     private final StatisticsService statisticsService;
-    @Autowired
     private SiteRepository siteRepository;
-
-    public ApiController(StatisticsService statisticsService) {
-        this.statisticsService = statisticsService;
-    }
+    private SearchService searchService;
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> statistics() {
@@ -62,14 +58,7 @@ public class ApiController {
 
     @GetMapping("/search")
     public boolean search(String query, String site, int offset, int limit) {
+        searchService.startSearch(query, site, offset, limit);
         return true;
     }
 }
-
-//запись в главной таблице через дочернюю
-//таблица index
-//удаление информации о записи из бд
-//поле rank
-//пропускать ошибочный код
-//запись лемм
-//statistics
