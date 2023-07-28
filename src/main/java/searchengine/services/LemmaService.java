@@ -25,6 +25,7 @@ public class LemmaService {
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
     private final SiteRepository siteRepository;
+
     public void findAndSave(PageEntity page) {
         String clearText = htmlParser.htmlToText(page.getContent());
         Map<String, Integer> lemmaMap = lemmaFinder.collectLemmas(clearText);

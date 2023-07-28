@@ -22,8 +22,8 @@ import java.util.stream.Collectors;
 public class UrlParser extends RecursiveAction {
     private final Integer siteId;
     private final String path;
-    private final transient SiteRepository siteRepository;
-    private final transient PageRepository pageRepository;
+    private final SiteRepository siteRepository;
+    private final PageRepository pageRepository;
     private final HtmlParser htmlParser;
     private final LemmaService lemmaService;
     private final boolean isFirstAction;

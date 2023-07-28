@@ -18,6 +18,8 @@ indexing-settings:
   sites:
      - url: https://ipfran.ru/
        name: ipfran
+     - url: http://www.playback.ru/
+       name: playback
 
 jsoup:
   user_agent: searchBotProject

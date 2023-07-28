@@ -1,16 +1,19 @@
 package searchengine.services;
 
-import lombok.RequiredArgsConstructor;
 import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
-import org.jsoup.Jsoup;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
 @Component
 public class LemmaFinder {
     private final LuceneMorphology luceneMorphology;
+    @Autowired
+    private HtmlParser htmlParser;
     private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ"};
     public static LemmaFinder getInstance() throws IOException {
         LuceneMorphology morphology= new RussianLuceneMorphology();
@@ -52,6 +55,20 @@ public class LemmaFinder {
                 lemmas.put(normalWord, 1);
             }
         }
+        return lemmas;
+    }
+
+    public Map<String, String> collectLemmasAndQueryWord(String text) {
+        Map<String, String> lemmas = new ConcurrentHashMap<>();
+        Arrays.stream(arrayContainsRussianWords(htmlParser.htmlToText(text)))
+                .filter(this::hasParticleProperty)
+                .filter(word -> !luceneMorphology.getNormalForms(word).isEmpty())
+                .filter(word -> word.length() > 1)
+                .forEach(word -> {
+                    if (!luceneMorphology.getNormalForms(word).isEmpty()) {
+                        lemmas.put(luceneMorphology.getNormalForms(word).get(0), word);
+                    }
+                });
         return lemmas;
     }
 

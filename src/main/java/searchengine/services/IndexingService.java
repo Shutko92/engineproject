@@ -2,7 +2,6 @@ package searchengine.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.bytebuddy.implementation.bytecode.Throw;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
@@ -80,8 +79,9 @@ public class IndexingService {
             Optional<PageEntity> optionalPage = pageRepository.findBySiteAndPath(site, path);
             if (optionalPage.isPresent()) {
                 PageEntity page = optionalPage.get();
-                lemmaService.findAndSave(page);
-                lemmaService.updateLemmasFrequency(site.getId());
+//                lemmaService.findAndSave(page);
+//                lemmaService.updateLemmasFrequency(site.getId());
+                new Thread(()-> new ThreadHelper(lemmaService, page, site.getId())).start();
             } else {
                 log.warn("Page not found: {}", path);
                 return false;
@@ -116,7 +116,6 @@ public class IndexingService {
 
         if (optionalPage.isPresent()) {
             PageEntity page = optionalPage.get();
-            //        optional.ifPresent(pageRepository::delete);
             List<IndexEntity> indexes = page.getIndexes();
             for (IndexEntity index : indexes) {
                 indexRepository.delete(index);

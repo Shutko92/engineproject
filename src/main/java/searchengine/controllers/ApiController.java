@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import searchengine.dto.indexing.IndexingResponse;
+import searchengine.dto.searching.SearchResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.model.repository.SiteRepository;
 import searchengine.model.entities.Status;
@@ -17,10 +18,10 @@ import searchengine.services.StatisticsService;
 @AllArgsConstructor
 @RequestMapping("/api")
 public class ApiController {
-    private IndexingService indexingService;
+    private final IndexingService indexingService;
     private final StatisticsService statisticsService;
-    private SiteRepository siteRepository;
-    private SearchService searchService;
+    private final SiteRepository siteRepository;
+    private final SearchService searchService;
 
     @GetMapping("/statistics")
     public ResponseEntity<StatisticsResponse> statistics() {
@@ -57,8 +58,15 @@ public class ApiController {
     }
 
     @GetMapping("/search")
-    public boolean search(String query, String site, int offset, int limit) {
-        searchService.startSearch(query, site, offset, limit);
-        return true;
+    public SearchResponse search(@RequestParam(name = "query", defaultValue = "") String query, @RequestParam(name = "site", defaultValue = "") String site,
+                                 @RequestParam(name = "offset", defaultValue = "0") int offset, @RequestParam(name = "limit", defaultValue = "20") int limit) {
+        if (query.isEmpty()) {
+            return new SearchResponse(false, "Задан пустой поисковый запрос");
+        } else {
+            if (!site.isEmpty()) {
+                return searchService.oneSiteSearch(query, site, offset, limit);
+            }
+        }
+        return searchService.groupSiteSearch(query, offset, limit);
     }
 }

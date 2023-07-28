@@ -11,5 +11,4 @@ import java.util.Optional;
 public interface PageRepository extends JpaRepository<PageEntity, Integer> {
     boolean existsBySiteIdAndPath(Integer siteId, String path);
     Optional<PageEntity> findBySiteAndPath(SiteEntity site, String path);
-    long countBySite(int id);
 }

@@ -13,4 +13,5 @@ public interface SiteRepository extends JpaRepository<SiteEntity, Integer> {
     boolean existsByIdAndStatus(Integer id, Status status);
     Optional<SiteEntity> findByUrlIgnoreCase(String siteUrl);
 
+    boolean existsByStatusNot(Status status);
 }

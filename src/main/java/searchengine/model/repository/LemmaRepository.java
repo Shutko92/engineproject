@@ -11,5 +11,5 @@ import java.util.Optional;
 public interface LemmaRepository extends JpaRepository<LemmaEntity, Integer> {
     Optional<LemmaEntity> findBySiteAndLemma(SiteEntity site, String name);
     Iterable<? extends LemmaEntity> findAllBySite(SiteEntity site);
-    long countBySite(int id);
+    Optional<LemmaEntity> findByLemma(String lemma);
 }
