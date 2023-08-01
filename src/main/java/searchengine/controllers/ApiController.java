@@ -62,11 +62,7 @@ public class ApiController {
                                  @RequestParam(name = "offset", defaultValue = "0") int offset, @RequestParam(name = "limit", defaultValue = "20") int limit) {
         if (query.isEmpty()) {
             return new SearchResponse(false, "Задан пустой поисковый запрос");
-        } else {
-            if (!site.isEmpty()) {
-                return searchService.oneSiteSearch(query, site, offset, limit);
-            }
         }
-        return searchService.groupSiteSearch(query, offset, limit);
+        return searchService.processSearch(query, site, offset, limit);
     }
 }

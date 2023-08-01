@@ -30,63 +30,32 @@ public class SearchService {
     private final SiteRepository siteRepository;
     private static final int SYMBOLS_IN_SNIPPET = 100;
 
-    public SearchResponse oneSiteSearch(String query, String site, int offset, int limit) {
-        String siteUrl = "";
-        String path = "/";
-        try {
-            URL gotUrl = new URL(site);
-            siteUrl = gotUrl.getProtocol() + "://" + gotUrl.getHost() + "/";
-            path = gotUrl.getPath();
-        } catch (MalformedURLException e) {
-            log.error("Error at parsing url, ", e);
-        }
-
-        path = path.trim();
-        path = path.isBlank() ? "/" : path;
-        Optional<SiteEntity> optional = siteRepository.findByUrlIgnoreCase(siteUrl);
-        if (optional.isPresent()) {
-            SiteEntity siteToSearch = optional.get();
-            Map<String, Integer> queryMap = lemmaFinder.collectLemmas(query);
-            Map<LemmaEntity, Integer> mapToSort = findLemmaMatchesSingleSite(siteToSearch, queryMap);
-            Map<LemmaEntity, Integer> sortedLemmas = sortMap(mapToSort);
-            Set<PageEntity> pagesList = searchForPages(sortedLemmas.keySet());
-
-            if (pagesList.size()>0) {
-                Map<PageEntity, Integer> relevancePageMap = calculateRelevance(pagesList, sortedLemmas.keySet());
-                Map<PageEntity, Integer> sortedRelevance = sortMapReverse(relevancePageMap);
-                Set<SearchInfo> organizedSearch = organizeSearch(sortedRelevance, query);
-                return new SearchResponse(true, pagesList.size(), organizedSearch);
-            } else {
-                return new SearchResponse(false, "Указанная страница не найдена");
-            }
-        }
-        return new SearchResponse(false, "Нет индексированного сайта с url " + siteUrl);
-    }
-
-    public SearchResponse groupSiteSearch(String query, int offset, int limit) {
+    public SearchResponse processSearch(String query, String site, int offset, int limit) {
         Map<String, Integer> queryMap = lemmaFinder.collectLemmas(query);
-        Map<LemmaEntity, Integer> mapToSort = findLemmaMatches(queryMap);
+        Map<LemmaEntity, Integer> mapToSort = findLemmaMatches(site, queryMap);
         Map<LemmaEntity, Integer> sortedLemmas = sortMap(mapToSort);
         Set<PageEntity> pagesList = searchForPages(sortedLemmas.keySet());
 
-        if (pagesList.size()>0) {
-            Map<PageEntity, Integer> relevancePageMap = calculateRelevance(pagesList, sortedLemmas.keySet());
-            Map<PageEntity, Integer> sortedRelevance = sortMapReverse(relevancePageMap);
+        if (!pagesList.isEmpty()) {
+            Map<PageEntity, Double> relevancePageMap = calculateRelevance(pagesList, sortedLemmas.keySet());
+            Map<PageEntity, Double> sortedRelevance = sortMapReverse(relevancePageMap);
             Set<SearchInfo> organizedSearch = organizeSearch(sortedRelevance, query);
             return new SearchResponse(true, pagesList.size(), organizedSearch);
         }
-            return new SearchResponse(false, "Указанная страница не найдена");
+        return new SearchResponse(false, "Указанная страница не найдена");
     }
 
-    private Set<SearchInfo> organizeSearch(Map<PageEntity, Integer> sortedRelevance, String query) {
+    private Set<SearchInfo> organizeSearch(Map<PageEntity, Double> sortedRelevance, String query) {
         Set<SearchInfo> collector = new HashSet<>();
-        for (Map.Entry<PageEntity, Integer> pageRelevanceEntry : sortedRelevance.entrySet()) {
+        for (Map.Entry<PageEntity, Double> pageRelevanceEntry : sortedRelevance.entrySet()) {
             String title = htmlParser.getTitle(pageRelevanceEntry.getKey().getContent());
             String snippet = cutSnippet(query, pageRelevanceEntry.getKey());
+
             SearchInfo instance = new SearchInfo();
-            instance.setUri(pageRelevanceEntry.getKey().getPath());
             instance.setSite(String.valueOf(pageRelevanceEntry.getKey().getSite()));
-            instance.setSiteName(title);
+            instance.setSiteName(pageRelevanceEntry.getKey().getSite().getName());
+            instance.setUri(pageRelevanceEntry.getKey().getPath());
+            instance.setTitle(title);
             instance.setSnippet(snippet);
             instance.setRelevance(pageRelevanceEntry.getValue());
             collector.add(instance);
@@ -94,7 +63,7 @@ public class SearchService {
         return collector;
     }
 
-    private Map<PageEntity, Integer> calculateRelevance(Set<PageEntity> pageSet, Set<LemmaEntity> lemmas) {
+    private Map<PageEntity, Double> calculateRelevance(Set<PageEntity> pageSet, Set<LemmaEntity> lemmas) {
         List<PageEntity> pageList = pageSet.stream().toList();
         Map<PageEntity, Set<Float>> ranksPerPage = new HashMap<>();
         for (int i = 1; i < pageList.size(); i++) {
@@ -103,6 +72,7 @@ public class SearchService {
                     .collect(Collectors.toSet());
             ranksPerPage.put(pageList.get(i), ranks);
         }
+
         Map<PageEntity, Integer> relAbs = new HashMap<>();
         for (Map.Entry<PageEntity, Set<Float>> ranksValue : ranksPerPage.entrySet()) {
             int sum = 0;
@@ -111,10 +81,11 @@ public class SearchService {
             }
             relAbs.put(ranksValue.getKey(), sum);
         }
-        Map<PageEntity, Integer> relRel = new HashMap<>();
-        Integer maxRankValue = relAbs.values().stream().max(Integer::compare).get();
+
+        Map<PageEntity, Double> relRel = new HashMap<>();
+        int maxRankValue = relAbs.values().stream().max(Integer::compare).get();
         for (Map.Entry<PageEntity, Integer> relAbsEntry : relAbs.entrySet()) {
-            int result = relAbsEntry.getValue() / maxRankValue;
+            double result = (double) relAbsEntry.getValue() / maxRankValue;
             relRel.put(relAbsEntry.getKey(), result);
         }
         return relRel;
@@ -159,18 +130,20 @@ public class SearchService {
         String text = htmlParser.htmlToText(page.getContent()).trim();
         List<String> keywords = getSearchWords(text, query);
         StringBuilder snippet = new StringBuilder();
+
         for (String word : keywords) {
             int firstIndex = text.indexOf(word);
             int lastIndex = text.indexOf(firstIndex + word.length(), firstIndex);
             String before;
             String after;
+
             if (firstIndex - 15 < 0) {
-                before = text.substring(0, firstIndex) + " <b>";
+                before = "..." + text.substring(0, firstIndex) + " <b>";
             } else {
                 before = "..." + text.substring(firstIndex - 15, firstIndex) + " <b>";
             }
             if (lastIndex + 15 > text.length()) {
-                after = "</b> " + text.substring(lastIndex);
+                after = "</b> " + text.substring(lastIndex) + "...";
             } else {
                 after = "</b> " + text.substring(lastIndex, firstIndex + 15) + "...";
             }
@@ -184,10 +157,12 @@ public class SearchService {
         if (lemmas.isEmpty()) {
             return Set.of();
         }
+
         List<LemmaEntity> lemmaList = lemmas.stream().toList();
         Set<PageEntity> pages = lemmaList.get(0).getIndexes().stream()
                 .map(IndexEntity::getPage)
                 .collect(Collectors.toSet());
+
         for (int i = 1; i < lemmaList.size(); i++) {
             pages = indexRepository.findAllByLemmaAndPageIn(lemmaList.get(i), pages)
                     .stream().map(IndexEntity::getPage)
@@ -199,18 +174,24 @@ public class SearchService {
         return pages;
     }
 
-    private Map<LemmaEntity, Integer> findLemmaMatchesSingleSite(SiteEntity siteToSearch, Map<String, Integer> queryMap) {
-        Map<LemmaEntity, Integer> newMap = new HashMap<>();
-        for (String lemma : queryMap.keySet()) {
-            Optional<LemmaEntity> optionalLemma = lemmaRepository.findBySiteAndLemma(siteToSearch, lemma);
-            optionalLemma.ifPresent(lemmaEntity -> newMap.put(lemmaEntity, lemmaEntity.getFrequency()));
+    private Map<LemmaEntity, Integer> findLemmaMatches(String site, Map<String, Integer> queryMap) {
+        String siteUrl = "";
+        try {
+            URL gotUrl = new URL(site);
+            siteUrl = gotUrl.getProtocol() + "://" + gotUrl.getHost() + "/";
+        } catch (MalformedURLException e) {
+            log.error("Error at parsing url, ", e);
         }
-        return newMap;
-    }
-
-
-    private Map<LemmaEntity, Integer> findLemmaMatches(Map<String, Integer> queryMap) {
+        Optional<SiteEntity> optional = siteRepository.findByUrlIgnoreCase(siteUrl);
         Map<LemmaEntity, Integer> newMap = new HashMap<>();
+        if (optional.isPresent()) {
+            SiteEntity siteToSearch = optional.get();
+            for (String lemma : queryMap.keySet()) {
+                Optional<LemmaEntity> optionalLemma = lemmaRepository.findBySiteAndLemma(siteToSearch, lemma);
+                optionalLemma.ifPresent(lemmaEntity -> newMap.put(lemmaEntity, lemmaEntity.getFrequency()));
+            }
+            return newMap;
+        }
         for (String lemma : queryMap.keySet()) {
             Optional<LemmaEntity> optionalLemma = lemmaRepository.findByLemma(lemma);
             optionalLemma.ifPresent(lemmaEntity -> newMap.put(lemmaEntity, lemmaEntity.getFrequency()));
@@ -228,7 +209,7 @@ public class SearchService {
                         LinkedHashMap::new));
     }
 
-    private Map<PageEntity, Integer> sortMapReverse(Map<PageEntity, Integer> mapToSort) {
+    private Map<PageEntity, Double> sortMapReverse(Map<PageEntity, Double> mapToSort) {
         return mapToSort.entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
