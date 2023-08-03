@@ -4,6 +4,7 @@ import org.apache.lucene.morphology.LuceneMorphology;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import searchengine.dto.searching.WordLemmas;
 
 import java.io.IOException;
 import java.util.*;
@@ -12,8 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class LemmaFinder {
     private final LuceneMorphology luceneMorphology;
-    @Autowired
-    private HtmlParser htmlParser;
     private static final String[] particlesNames = new String[]{"МЕЖД", "ПРЕДЛ", "СОЮЗ"};
     public static LemmaFinder getInstance() throws IOException {
         LuceneMorphology morphology= new RussianLuceneMorphology();
@@ -58,9 +57,37 @@ public class LemmaFinder {
         return lemmas;
     }
 
+    public Map<String, String> collectLemmasAndWords(String text) {
+        String[] words = arrayContainsRussianWords(text);
+        HashMap<String, String> lemmas = new HashMap<>();
+
+        for (String word : words) {
+            if (word.isBlank()) {
+                continue;
+            }
+
+            List<String> wordBaseForms = luceneMorphology.getMorphInfo(word);
+            if (anyWordBaseBelongToParticle(wordBaseForms)) {
+                continue;
+            }
+
+            List<String> normalForms = luceneMorphology.getNormalForms(word);
+            if (normalForms.isEmpty()) {
+                continue;
+            }
+
+            String normalWord = normalForms.get(0);
+
+            if (!lemmas.containsKey(normalWord)) {
+                lemmas.put(normalWord, word);
+            }
+        }
+        return lemmas;
+    }
+
     public Map<String, String> collectLemmasAndQueryWord(String text) {
         Map<String, String> lemmas = new ConcurrentHashMap<>();
-        Arrays.stream(arrayContainsRussianWords(htmlParser.htmlToText(text)))
+        Arrays.stream(arrayContainsRussianWords(text))
                 .filter(this::hasParticleProperty)
                 .filter(word -> !luceneMorphology.getNormalForms(word).isEmpty())
                 .filter(word -> word.length() > 1)

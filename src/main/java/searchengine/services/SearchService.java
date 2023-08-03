@@ -39,14 +39,15 @@ public class SearchService {
         if (!pagesList.isEmpty()) {
             Map<PageEntity, Double> relevancePageMap = calculateRelevance(pagesList, sortedLemmas.keySet());
             Map<PageEntity, Double> sortedRelevance = sortMapReverse(relevancePageMap);
-            Set<SearchInfo> organizedSearch = organizeSearch(sortedRelevance, query);
-            return new SearchResponse(true, pagesList.size(), organizedSearch);
+            List<SearchInfo> organizedSearch = organizeSearch(sortedRelevance, query);
+            List<SearchInfo> subInfo = subList(organizedSearch, offset, limit);
+            return new SearchResponse(true, pagesList.size(), subInfo);
         }
         return new SearchResponse(false, "Указанная страница не найдена");
     }
 
-    private Set<SearchInfo> organizeSearch(Map<PageEntity, Double> sortedRelevance, String query) {
-        Set<SearchInfo> collector = new HashSet<>();
+    private List<SearchInfo> organizeSearch(Map<PageEntity, Double> sortedRelevance, String query) {
+        List<SearchInfo> collector = new ArrayList<>();
         for (Map.Entry<PageEntity, Double> pageRelevanceEntry : sortedRelevance.entrySet()) {
             String title = htmlParser.getTitle(pageRelevanceEntry.getKey().getContent());
             String snippet = cutSnippet(query, pageRelevanceEntry.getKey());
@@ -83,7 +84,7 @@ public class SearchService {
         }
 
         Map<PageEntity, Double> relRel = new HashMap<>();
-        int maxRankValue = relAbs.values().stream().max(Integer::compare).get();
+        double maxRankValue = relAbs.values().stream().max(Double::compare).get();
         for (Map.Entry<PageEntity, Integer> relAbsEntry : relAbs.entrySet()) {
             double result = (double) relAbsEntry.getValue() / maxRankValue;
             relRel.put(relAbsEntry.getKey(), result);
@@ -92,13 +93,18 @@ public class SearchService {
     }
 
     private List<String> getSearchWords(String cleanText, String searchQuery) {
-        Map<String, String> stringMap = lemmaFinder.collectLemmasAndQueryWord(cleanText);
-        Map<String, String> searchLemmas = lemmaFinder.collectLemmasAndQueryWord(searchQuery);
-        return searchLemmas
-                .keySet().stream()
-                .filter(stringMap::containsKey)
-                .map(stringMap::get)
-                .toList();
+        Map<String, String> stringMap = lemmaFinder.collectLemmasAndWords(cleanText);
+        Map<String, String> searchLemmas = lemmaFinder.collectLemmasAndWords(searchQuery);
+        List<String> searchWords = new ArrayList<>();
+        for (Map.Entry<String, String> stringEntry : searchLemmas.entrySet()) {
+            for (Map.Entry<String, String> stringStringEntry : stringMap.entrySet()) {
+                if (stringStringEntry.getKey().equals(stringEntry.getKey())) {
+                    searchWords.add(stringStringEntry.getValue());
+
+                }
+            }
+        }
+        return searchWords;
     }
 
     private String paddingSnippet(String content, List<WordLemmas> pageCommonSequence) {
@@ -127,28 +133,33 @@ public class SearchService {
     }
 
     private String cutSnippet (String query, PageEntity page) {
-        String text = htmlParser.htmlToText(page.getContent()).trim();
+        String text = htmlParser.htmlToText(page.getContent());
         List<String> keywords = getSearchWords(text, query);
         StringBuilder snippet = new StringBuilder();
 
         for (String word : keywords) {
-            int firstIndex = text.indexOf(word);
-            int lastIndex = text.indexOf(firstIndex + word.length(), firstIndex);
-            String before;
-            String after;
+            final int SIDE_STEP = 50;
 
-            if (firstIndex - 15 < 0) {
-                before = "..." + text.substring(0, firstIndex) + " <b>";
-            } else {
-                before = "..." + text.substring(firstIndex - 15, firstIndex) + " <b>";
+            if (text.contains(word)) {
+                int firstIndex = text.indexOf(word);
+                int lastIndex = firstIndex + word.length();
+                String before;
+                String after;
+
+                if (firstIndex - SIDE_STEP < 0) {
+                    before = "..." + text.substring(0, firstIndex) + " <b>";
+                } else {
+                    before = "..." + text.substring(firstIndex - SIDE_STEP, firstIndex) + " <b>";
+                }
+                if (lastIndex + SIDE_STEP > text.length()) {
+                    after = "</b> " + text.substring(lastIndex) + "...";
+                } else {
+                    after = "</b> " + text.substring(lastIndex, firstIndex + SIDE_STEP) + "...";
+                }
+                String keyWord = text.substring(firstIndex, lastIndex);
+                snippet.append(before).append(keyWord).append(after);
             }
-            if (lastIndex + 15 > text.length()) {
-                after = "</b> " + text.substring(lastIndex) + "...";
-            } else {
-                after = "</b> " + text.substring(lastIndex, firstIndex + 15) + "...";
-            }
-            String keyWord = text.substring(firstIndex, lastIndex);
-            snippet.append(before).append(keyWord).append(after);
+
         }
         return snippet.toString();
     }
@@ -172,6 +183,20 @@ public class SearchService {
             }
         }
         return pages;
+    }
+
+    private List<SearchInfo> subList(List<SearchInfo> searchData, Integer offset, Integer limit) {
+        int fromIndex = offset;
+        int toIndex = fromIndex + limit;
+
+        if (toIndex > searchData.size()) {
+            toIndex = searchData.size();
+        }
+        if (fromIndex > toIndex) {
+            return List.of();
+        }
+
+        return searchData.subList(fromIndex, toIndex);
     }
 
     private Map<LemmaEntity, Integer> findLemmaMatches(String site, Map<String, Integer> queryMap) {
