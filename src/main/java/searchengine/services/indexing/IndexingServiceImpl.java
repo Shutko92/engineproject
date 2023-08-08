@@ -41,9 +41,8 @@ public class IndexingServiceImpl implements IndexingService {
             return new IndexingResponse(false, "Индексация уже запущена");
         }
         List<Site> sitesList = sites.getSites();
-
+        deleteSites();
         for (Site site : sitesList) {
-            deleteSites();
             String url = site.getUrl();
 
             log.info("Save site with url: {}", url);

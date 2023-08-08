@@ -18,8 +18,10 @@ indexing-settings:
   sites:
      - url: https://ipfran.ru/
        name: ipfran
-     - url: http://www.playback.ru/
-       name: playback
+     - url: https://volochek.life/
+       name: volochek
+     - url: http://radiomv.ru/
+       name: radiomv
 
 jsoup:
   user_agent: searchBotProject
