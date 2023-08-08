@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.indexing;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,6 +9,7 @@ import searchengine.model.entities.SiteEntity;
 import searchengine.model.entities.Status;
 import searchengine.model.repository.PageRepository;
 import searchengine.model.repository.SiteRepository;
+import searchengine.services.lemmas.LemmaServiceImpl;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -25,12 +26,12 @@ public class UrlParser extends RecursiveAction {
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final HtmlParser htmlParser;
-    private final LemmaService lemmaService;
+    private final LemmaServiceImpl lemmaService;
     private final boolean isFirstAction;
 
     @Override
     protected void compute() {
-        if (IndexingService.isStopFlag()) {
+        if (IndexingServiceImpl.stopFlag) {
             failed(siteId, "Индексация остановлена пользователем");
             lemmaService.updateLemmasFrequency(siteId);
             return;
@@ -87,7 +88,7 @@ public class UrlParser extends RecursiveAction {
     }
 
     private void failed(Integer siteId, String error) {
-        IndexingService.stopFlag = false;
+        IndexingServiceImpl.stopFlag = false;
         log.warn("Failed indexing site with id {}: {}", siteId, error);
         SiteEntity persistSite = getPersistSite(siteId);
         persistSite.setLastError(error);
@@ -113,7 +114,7 @@ public class UrlParser extends RecursiveAction {
     }
 
     private void indexed(Integer siteId) {
-        IndexingService.stopFlag = false;
+        IndexingServiceImpl.stopFlag = false;
         SiteEntity persistSite = getPersistSite(siteId);
         persistSite.setStatusTime(LocalDateTime.now());
         persistSite.setStatus(Status.INDEXED);

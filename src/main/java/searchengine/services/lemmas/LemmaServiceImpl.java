@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.lemmas;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +10,7 @@ import searchengine.model.entities.SiteEntity;
 import searchengine.model.repository.IndexRepository;
 import searchengine.model.repository.LemmaRepository;
 import searchengine.model.repository.SiteRepository;
+import searchengine.services.indexing.HtmlParser;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -19,13 +20,14 @@ import java.util.Set;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-public class LemmaService {
+public class LemmaServiceImpl implements LemmaService {
     private final HtmlParser htmlParser;
     private final LemmaFinder lemmaFinder;
     private final LemmaRepository lemmaRepository;
     private final IndexRepository indexRepository;
     private final SiteRepository siteRepository;
 
+    @Override
     public void findAndSave(PageEntity page) {
         String clearText = htmlParser.htmlToText(page.getContent());
         Map<String, Integer> lemmaMap = lemmaFinder.collectLemmas(clearText);
@@ -58,6 +60,7 @@ public class LemmaService {
         indexRepository.saveAll(indices);
     }
 
+    @Override
     public void updateLemmasFrequency(Integer siteId) {
         SiteEntity site = siteRepository.findById(siteId).orElseThrow(() -> new IllegalStateException("Site not found"));
         Set<LemmaEntity> lemmaToSave = new HashSet<>();

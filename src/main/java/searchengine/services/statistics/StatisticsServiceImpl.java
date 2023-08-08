@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.statistics;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +31,7 @@ public class StatisticsServiceImpl implements StatisticsService {
                 lemmaRepository.count(),
                 !siteRepository.existsByStatusNot(Status.INDEXED)
         );
+
         List<DetailedStatisticsItem> detailed = new ArrayList<>();
         List<SiteEntity> sitesList = siteRepository.findAll();
 

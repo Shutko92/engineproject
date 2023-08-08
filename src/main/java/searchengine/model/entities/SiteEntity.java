@@ -29,7 +29,7 @@ public class SiteEntity {
     @Column(columnDefinition = "VARCHAR(255)", nullable = false)
     private String url;
     @Column(columnDefinition = "VARCHAR(255)", nullable = false)
-    private String name;//site name
+    private String name;
     @OneToMany(mappedBy = "site", cascade = CascadeType.MERGE)
     private List<PageEntity> pages = new ArrayList<>();
     @OneToMany(mappedBy = "site", cascade = CascadeType.MERGE)

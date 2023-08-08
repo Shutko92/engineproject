@@ -1,4 +1,4 @@
-package searchengine.services;
+package searchengine.services.indexing;
 
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Connection;

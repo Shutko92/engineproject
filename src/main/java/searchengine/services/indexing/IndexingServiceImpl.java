@@ -1,16 +1,18 @@
-package searchengine.services;
+package searchengine.services.indexing;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import searchengine.config.Site;
 import searchengine.config.SitesList;
+import searchengine.dto.indexing.IndexingResponse;
 import searchengine.dto.indexing.PageInfo;
 import searchengine.model.entities.*;
 import searchengine.model.repository.IndexRepository;
 import searchengine.model.repository.LemmaRepository;
 import searchengine.model.repository.PageRepository;
 import searchengine.model.repository.SiteRepository;
+import searchengine.services.lemmas.LemmaServiceImpl;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -23,21 +25,24 @@ import java.util.concurrent.ForkJoinPool;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class IndexingService {
+public class IndexingServiceImpl implements IndexingService {
     private final SitesList sites;
     private final SiteRepository siteRepository;
     private final PageRepository pageRepository;
     private final IndexRepository indexRepository;
     private final LemmaRepository lemmaRepository;
-    private final LemmaService lemmaService;
+    private final LemmaServiceImpl lemmaService;
     private final HtmlParser htmlParser;
     public static boolean stopFlag = false;
 
-    public void readLinks() {
+    @Override
+    public IndexingResponse readAndIndex() {
+        if (siteRepository.existsByStatus(Status.INDEXING)) {
+            return new IndexingResponse(false, "Индексация уже запущена");
+        }
         List<Site> sitesList = sites.getSites();
 
         for (Site site : sitesList) {
-
             deleteSites();
             String url = site.getUrl();
 
@@ -55,9 +60,20 @@ public class IndexingService {
                     new UrlParser(site.getId(), site.getUrl(), siteRepository,
                             pageRepository, htmlParser, lemmaService, true))).start();
         }
+        return new IndexingResponse(true);
     }
 
-    public boolean getPageFromUrl(String url) {
+    @Override
+    public IndexingResponse stopIndexing() {
+        if (!siteRepository.existsByStatus(Status.INDEXING)) {
+            return new IndexingResponse(false, "Индексация не запущена");
+        }
+        stopFlag = true;
+        return new IndexingResponse(true);
+    }
+
+    @Override
+    public IndexingResponse indexPageFromUrl(String url) {
         String siteUrl = "";
         String path = "/";
         try {
@@ -79,28 +95,22 @@ public class IndexingService {
             Optional<PageEntity> optionalPage = pageRepository.findBySiteAndPath(site, path);
             if (optionalPage.isPresent()) {
                 PageEntity page = optionalPage.get();
-//                lemmaService.findAndSave(page);
-//                lemmaService.updateLemmasFrequency(site.getId());
-                new Thread(()-> new ThreadHelper(lemmaService, page, site.getId())).start();
-            } else {
-                log.warn("Page not found: {}", path);
-                return false;
+
+                new Thread(()-> new ThreadHelper(lemmaService, siteRepository, page, site)).start();
+                return new IndexingResponse(true);
             }
-            indexed(site.getId());
-        } else {
-            log.warn("Site not found: {}", siteUrl);
-            return false;
+            log.warn("Page not found: {}", path);
+            return new IndexingResponse(false, "Запрашиваемая страница не найдена");
         }
-        return true;
+        log.warn("Site not found: {}", siteUrl);
+        return new IndexingResponse(false,"Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
     }
 
     private void parsePage(SiteEntity site, String path) {
-        PageInfo pageInfo = null;
+        PageInfo pageInfo;
         try {
             pageInfo = htmlParser.getPageInfo(site.getUrl() + path);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
         pageRepository.save(PageEntity.builder()
@@ -135,15 +145,7 @@ public class IndexingService {
         SiteEntity site = siteRepository.findById(siteId).orElseThrow(()-> new IllegalStateException("Site not found"));
         site.setStatus(Status.INDEXING);
         siteRepository.save(site);
-    }
-
-    private void indexed(int siteId) {
-        SiteEntity site = siteRepository.findById(siteId).orElseThrow(()-> new IllegalStateException("Site not found"));
-        site.setStatus(Status.INDEXED);
-        siteRepository.save(site);
-    }
-    public static boolean isStopFlag() {
-        return stopFlag;
+        log.info("Indexing finished");
     }
 
     private void deleteSites() {

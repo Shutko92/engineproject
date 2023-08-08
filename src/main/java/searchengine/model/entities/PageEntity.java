@@ -24,7 +24,7 @@ public class PageEntity {
     @JoinColumn(columnDefinition = "INT", name = "site", nullable = false)
     private SiteEntity site;
     @Column(nullable = false)
-    private String path;//needs index
+    private String path;
     @Column(columnDefinition = "INT", nullable = false)
     private int code;
     @Column(columnDefinition = "MEDIUMTEXT", nullable = false)
