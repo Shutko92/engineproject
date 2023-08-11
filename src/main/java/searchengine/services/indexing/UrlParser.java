@@ -3,6 +3,7 @@ package searchengine.services.indexing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.UnsupportedMimeTypeException;
+import searchengine.controllers.ApiController;
 import searchengine.dto.indexing.PageInfo;
 import searchengine.model.entities.PageEntity;
 import searchengine.model.entities.SiteEntity;
@@ -63,6 +64,7 @@ public class UrlParser extends RecursiveAction {
             } catch (UnsupportedMimeTypeException ignore) {
             } catch (Exception e) {
                 log.error("Parser exception", e);
+                log.error(e.getStackTrace().toString());
                 failed(siteId, "Ошибка парсинга URL: " + getPersistSite(siteId).getUrl() + path);
                 lemmaService.updateLemmasFrequency(siteId);
             }

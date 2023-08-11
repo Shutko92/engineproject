@@ -16,10 +16,6 @@ public class LemmaFinder {
         this.luceneMorphology = new RussianLuceneMorphology();
     }
 
-    private LemmaFinder(LuceneMorphology luceneMorphology) {
-        this.luceneMorphology = luceneMorphology;
-    }
-
     public Map<String, Integer> collectLemmas(String text) {
         String[] words = arrayContainsRussianWords(text);
         HashMap<String, Integer> lemmas = new HashMap<>();

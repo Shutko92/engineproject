@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "pages", indexes = {@Index(name = "idx_page_path", columnList = "path", unique = true)},
+@Table(name = "pages", indexes = {@Index(name = "idx_page_path", columnList = "path")},
         uniqueConstraints = @UniqueConstraint(columnNames = {"site", "path"}))
 public class PageEntity {
     @Id

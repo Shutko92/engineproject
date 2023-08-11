@@ -39,8 +39,7 @@ public class SearchServiceImpl implements SearchService {
 
         if (!pagesList.isEmpty()) {
             Map<PageEntity, Double> relevancePageMap = calculateRelevance(pagesList, sortedLemmas.keySet());
-            Map<PageEntity, Double> sortedRelevance = sortMapReverse(relevancePageMap);
-            List<SearchInfo> organizedSearch = organizeSearch(sortedRelevance, query);
+            List<SearchInfo> organizedSearch = organizeSearch(relevancePageMap, query);
             List<SearchInfo> subInfo = subList(organizedSearch, offset, limit);
             return new SearchResponse(true, organizedSearch.size(), subInfo);
         }
@@ -53,16 +52,18 @@ public class SearchServiceImpl implements SearchService {
         for (Map.Entry<PageEntity, Double> pageRelevanceEntry : sortedRelevance.entrySet()) {
             String title = htmlParser.getTitle(pageRelevanceEntry.getKey().getContent());
             String snippet = cutSnippet(query, pageRelevanceEntry.getKey());
+            if (!title.isEmpty() && !snippet.isEmpty()) {
+                SearchInfo instance = new SearchInfo();
+                String url = pageRelevanceEntry.getKey().getSite().getUrl();
+                instance.setSite(String.valueOf(pageRelevanceEntry.getKey().getSite()));
+                instance.setSiteName(pageRelevanceEntry.getKey().getSite().getName());
+                instance.setUri(url);
+                instance.setTitle(title);
+                instance.setSnippet(snippet);
+                instance.setRelevance(pageRelevanceEntry.getValue());
+                collector.add(instance);
+            }
 
-            SearchInfo instance = new SearchInfo();
-            String url = pageRelevanceEntry.getKey().getSite().getUrl();
-            instance.setSite(String.valueOf(pageRelevanceEntry.getKey().getSite()));
-            instance.setSiteName(pageRelevanceEntry.getKey().getSite().getName());
-            instance.setUri(url);
-            instance.setTitle(title);
-            instance.setSnippet(snippet);
-            instance.setRelevance(pageRelevanceEntry.getValue());
-            collector.add(instance);
         }
         return collector;
     }
@@ -85,10 +86,11 @@ public class SearchServiceImpl implements SearchService {
             }
             relAbs.put(ranksValue.getKey(), sum);
         }
+        Map<PageEntity, Integer> sortedRelAbs = sortMapReverse(relAbs);
 
         Map<PageEntity, Double> relRel = new HashMap<>();
-        double maxRankValue = relAbs.values().stream().findFirst().get();
-        relAbs.forEach((key, value) -> {
+        double maxRankValue = sortedRelAbs.values().stream().findFirst().get();
+        sortedRelAbs.forEach((key, value) -> {
             double result = (double) value / maxRankValue;
             relRel.put(key, result);
         });
@@ -114,7 +116,7 @@ public class SearchServiceImpl implements SearchService {
         String text = htmlParser.htmlToText(page.getContent());
         List<String> keywords = findSearchWords(text, query);
         StringBuilder snippet = new StringBuilder();
-        final int SIDE_STEP = 20;
+        final int SIDE_STEP = 25;
 
         for (String word : keywords) {
 
@@ -212,10 +214,9 @@ public class SearchServiceImpl implements SearchService {
                         LinkedHashMap::new));
     }
 
-    private Map<PageEntity, Double> sortMapReverse(Map<PageEntity, Double> mapToSort) {
-        return mapToSort.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(600)
+    private Map<PageEntity, Integer> sortMapReverse(Map<PageEntity, Integer> mapToSort) {
+        return mapToSort.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(500)
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,

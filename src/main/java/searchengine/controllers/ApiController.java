@@ -8,14 +8,14 @@ import searchengine.dto.searching.SearchResponse;
 import searchengine.dto.statistics.StatisticsResponse;
 import searchengine.services.indexing.IndexingServiceImpl;
 import searchengine.services.searching.SearchServiceImpl;
-import searchengine.services.statistics.StatisticsService;
+import searchengine.services.statistics.StatisticsServiceImpl;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/api")
 public class ApiController {
     private final IndexingServiceImpl indexingService;
-    private final StatisticsService statisticsService;
+    private final StatisticsServiceImpl statisticsService;
     private final SearchServiceImpl searchService;
 
     @GetMapping("/statistics")
