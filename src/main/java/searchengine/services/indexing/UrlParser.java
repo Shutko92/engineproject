@@ -100,19 +100,17 @@ public class UrlParser extends RecursiveAction {
     }
 
     public Optional<PageEntity> savePage(Integer siteId, String path) throws IOException, InterruptedException {
-        synchronized (pageRepository) {
-            SiteEntity site = getPersistSite(siteId);
-            PageInfo pageInfo = htmlParser.getPageInfo(site.getUrl() + path);
-            if (isNotVisited(siteId, path)) {
-                return Optional.of(pageRepository.save(PageEntity.builder()
-                        .site(site)
-                        .path(path)
-                        .code(pageInfo.getStatusCode())
-                        .content(pageInfo.getContent())
-                        .build()));
-            } else {
-                return Optional.empty();
-            }
+        SiteEntity site = getPersistSite(siteId);
+        PageInfo pageInfo = htmlParser.getPageInfo(site.getUrl() + path);
+        if (isNotVisited(siteId, path)) {
+            return Optional.of(pageRepository.save(PageEntity.builder()
+                    .site(site)
+                    .path(path)
+                    .code(pageInfo.getStatusCode())
+                    .content(pageInfo.getContent())
+                    .build()));
+        } else {
+            return Optional.empty();
         }
     }
 
