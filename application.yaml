@@ -6,22 +6,27 @@ spring:
     username: root
     password: 46Y4y4gc
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
+  logging:
+     file:
+     name: logs/application.log
+
   jpa:
     properties:
       hibernate:
       dialect: org.hibernate.dialect.MySQL8Dialect
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
 
 indexing-settings:
   sites:
-     - url: https://ipfran.ru/
-       name: ipfran
-     - url: http://radiomv.ru/
-       name: radiomv
      - url: http://www.playback.ru/
        name: playback
+     - url: https://ipfran.ru/
+       name: ipfran
+     - url: https://et-cetera.ru/mobile/
+       name: et-cetera
+
 
 jsoup:
   user_agent: searchBotProject

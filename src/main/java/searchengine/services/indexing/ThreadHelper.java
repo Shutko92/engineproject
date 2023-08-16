@@ -1,12 +1,14 @@
 package searchengine.services.indexing;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import searchengine.model.entities.PageEntity;
 import searchengine.model.entities.SiteEntity;
 import searchengine.model.entities.Status;
 import searchengine.model.repository.SiteRepository;
 import searchengine.services.lemmas.LemmaServiceImpl;
 
+@Slf4j
 @AllArgsConstructor
 public class ThreadHelper implements Runnable{
     private final LemmaServiceImpl lemmaService;
@@ -25,5 +27,6 @@ public class ThreadHelper implements Runnable{
         SiteEntity site = siteRepository.findById(siteId).orElseThrow(()-> new IllegalStateException("Site not found"));
         site.setStatus(Status.INDEXED);
         siteRepository.save(site);
+        log.info("Indexing finished");
     }
 }

@@ -3,7 +3,6 @@ package searchengine.services.indexing;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.UnsupportedMimeTypeException;
-import searchengine.controllers.ApiController;
 import searchengine.dto.indexing.PageInfo;
 import searchengine.model.entities.PageEntity;
 import searchengine.model.entities.SiteEntity;
@@ -32,7 +31,8 @@ public class UrlParser extends RecursiveAction {
 
     @Override
     protected void compute() {
-        if (IndexingServiceImpl.stopFlag) {
+        if (IndexingServiceImpl.isStopFlag()) {
+            log.info("Indexing stopped for " + Thread.currentThread().getName());
             failed(siteId, "Индексация остановлена пользователем");
             lemmaService.updateLemmasFrequency(siteId);
             return;
@@ -59,12 +59,13 @@ public class UrlParser extends RecursiveAction {
                     if (isFirstAction && isNotFailed(siteId)) {
                         indexed(siteId);
                         lemmaService.updateLemmasFrequency(siteId);
+                        log.info("A site finished indexing");
                     }
                 }
             } catch (UnsupportedMimeTypeException ignore) {
             } catch (Exception e) {
+                IndexingServiceImpl.stopFlag = true;
                 log.error("Parser exception", e);
-                log.error(e.getStackTrace().toString());
                 failed(siteId, "Ошибка парсинга URL: " + getPersistSite(siteId).getUrl() + path);
                 lemmaService.updateLemmasFrequency(siteId);
             }
