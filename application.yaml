@@ -6,9 +6,6 @@ spring:
     username: root
     password: 46Y4y4gc
     url: jdbc:mysql://localhost:3306/search_engine?useSSL=false&requireSSL=false&allowPublicKeyRetrieval=true
-  logging:
-     file:
-     name: logs/application.log
 
   jpa:
     properties:

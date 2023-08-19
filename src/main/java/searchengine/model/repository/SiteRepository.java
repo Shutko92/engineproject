@@ -6,6 +6,7 @@ import searchengine.model.entities.Status;
 import searchengine.model.entities.SiteEntity;
 
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface SiteRepository extends JpaRepository<SiteEntity, Integer> {
@@ -13,4 +14,5 @@ public interface SiteRepository extends JpaRepository<SiteEntity, Integer> {
     boolean existsByIdAndStatus(Integer id, Status status);
     Optional<SiteEntity> findByUrlIgnoreCase(String siteUrl);
     boolean existsByStatusNot(Status status);
+    Set<SiteEntity> findAllByStatus(Status status);
 }

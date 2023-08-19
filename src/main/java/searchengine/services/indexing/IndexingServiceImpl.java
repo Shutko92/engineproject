@@ -1,6 +1,5 @@
 package searchengine.services.indexing;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,8 +33,6 @@ public class IndexingServiceImpl implements IndexingService {
     private final LemmaRepository lemmaRepository;
     private final LemmaServiceImpl lemmaService;
     private final HtmlParser htmlParser;
-    @Getter
-    public static volatile boolean stopFlag = false;
 
     @Override
     public IndexingResponse readAndIndex() {
@@ -69,7 +66,13 @@ public class IndexingServiceImpl implements IndexingService {
         if (!siteRepository.existsByStatus(Status.INDEXING)) {
             return new IndexingResponse(false, "Индексация не запущена");
         }
-        stopFlag = true;
+        siteRepository.findAllByStatus(Status.INDEXING).forEach(site -> {
+            site.setLastError("Индексация остановлена пользователем");
+            site.setStatus(Status.FAILED);
+            siteRepository.save(site);
+            log.info("Indexing stopped by user");
+            lemmaService.updateLemmasFrequency(site.getId());
+        });
         return new IndexingResponse(true);
     }
 

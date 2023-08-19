@@ -31,12 +31,6 @@ public class UrlParser extends RecursiveAction {
 
     @Override
     protected void compute() {
-        if (IndexingServiceImpl.isStopFlag()) {
-            log.info("Indexing stopped for " + Thread.currentThread().getName());
-            failed(siteId, "Индексация остановлена пользователем");
-            lemmaService.updateLemmasFrequency(siteId);
-            return;
-        }
         if (isNotFailed(siteId) && isNotVisited(siteId, path)) {
             try {
                 updateStatusTime(siteId);
@@ -64,7 +58,6 @@ public class UrlParser extends RecursiveAction {
                 }
             } catch (UnsupportedMimeTypeException ignore) {
             } catch (Exception e) {
-                IndexingServiceImpl.stopFlag = true;
                 log.error("Parser exception", e);
                 failed(siteId, "Ошибка парсинга URL: " + getPersistSite(siteId).getUrl() + path);
                 lemmaService.updateLemmasFrequency(siteId);
@@ -91,7 +84,6 @@ public class UrlParser extends RecursiveAction {
     }
 
     private void failed(Integer siteId, String error) {
-        IndexingServiceImpl.stopFlag = false;
         log.warn("Failed indexing site with id {}: {}", siteId, error);
         SiteEntity persistSite = getPersistSite(siteId);
         persistSite.setLastError(error);
@@ -115,7 +107,6 @@ public class UrlParser extends RecursiveAction {
     }
 
     private void indexed(Integer siteId) {
-        IndexingServiceImpl.stopFlag = false;
         SiteEntity persistSite = getPersistSite(siteId);
         persistSite.setStatusTime(LocalDateTime.now());
         persistSite.setStatus(Status.INDEXED);

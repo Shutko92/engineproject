@@ -24,7 +24,6 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public StatisticsResponse getStatistics() {
-
         TotalStatistics total = new TotalStatistics(
                 siteRepository.count(),
                 pageRepository.count(),
