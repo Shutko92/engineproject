@@ -116,7 +116,12 @@ public class SearchServiceImpl implements SearchService {
         String text = htmlParser.htmlToText(page.getContent());
         List<String> keywords = findSearchWords(text, query);
         StringBuilder snippet = new StringBuilder();
-        final int SIDE_STEP = 25;
+        final int NORMAL_SIZE = 25;
+        final int SPECIAL_SIZE = 12;
+        int sideStep = NORMAL_SIZE;
+        if (keywords.size()> 3) {
+            sideStep = SPECIAL_SIZE;
+        }
 
         for (String word : keywords) {
 
@@ -126,16 +131,16 @@ public class SearchServiceImpl implements SearchService {
                 String before;
                 String after;
 
-                if (firstIndex - SIDE_STEP < 0) {
+                if (firstIndex - sideStep < 0) {
                     before = "..." + text.substring(0, firstIndex) + " <b>";
                 } else {
-                    before = "..." + text.substring(firstIndex - SIDE_STEP, firstIndex) + " <b>";
+                    before = "..." + text.substring(firstIndex - sideStep, firstIndex) + " <b>";
                 }
 
-                if (lastIndex + SIDE_STEP > text.length()) {
+                if (lastIndex + sideStep > text.length()) {
                     after = "</b> " + text.substring(lastIndex) + "...";
                 } else {
-                    after = "</b> " + text.substring(lastIndex, firstIndex + SIDE_STEP) + "...";
+                    after = "</b> " + text.substring(lastIndex, firstIndex + sideStep) + "...";
                 }
                 String keyWord = text.substring(firstIndex, lastIndex);
                 snippet.append(before).append(keyWord).append(after);
