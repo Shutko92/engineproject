@@ -35,10 +35,10 @@ public class SearchServiceImpl implements SearchService {
         Map<String, Integer> queryMap = lemmaFinder.collectLemmas(query);
         Map<LemmaEntity, Integer> mapToSort = findLemmaMatches(site, queryMap);
         Map<LemmaEntity, Integer> sortedLemmas = sortMap(mapToSort);
-        Set<PageEntity> pagesList = searchForPages(sortedLemmas.keySet());
+        Set<PageEntity> pagesSet = searchForPages(sortedLemmas.keySet());
 
-        if (!pagesList.isEmpty()) {
-            Map<PageEntity, Double> relevancePageMap = calculateRelevance(pagesList, sortedLemmas.keySet());
+        if (!pagesSet.isEmpty()) {
+            Map<PageEntity, Double> relevancePageMap = calculateRelevance(pagesSet, sortedLemmas.keySet());
             List<SearchInfo> organizedSearch = organizeSearch(relevancePageMap, query);
             List<SearchInfo> subInfo = subList(organizedSearch, offset, limit);
             return new SearchResponse(true, organizedSearch.size(), subInfo);
@@ -89,7 +89,8 @@ public class SearchServiceImpl implements SearchService {
         Map<PageEntity, Integer> sortedRelAbs = sortMapReverse(relAbs);
 
         Map<PageEntity, Double> relRel = new HashMap<>();
-        double maxRankValue = sortedRelAbs.values().stream().findFirst().get();
+        int maxRankValue = sortedRelAbs.values().stream().max(Comparator.comparing(Integer::intValue)).get();
+
         sortedRelAbs.forEach((key, value) -> {
             double result = (double) value / maxRankValue;
             relRel.put(key, result);
@@ -116,7 +117,7 @@ public class SearchServiceImpl implements SearchService {
         String text = htmlParser.htmlToText(page.getContent());
         List<String> keywords = findSearchWords(text, query);
         StringBuilder snippet = new StringBuilder();
-        final int NORMAL_SIZE = 25;
+        final int NORMAL_SIZE = 24;
         final int SPECIAL_SIZE = 12;
         int sideStep = NORMAL_SIZE;
         if (keywords.size()> 3) {
@@ -185,26 +186,34 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private Map<LemmaEntity, Integer> findLemmaMatches(String site, Map<String, Integer> queryMap) {
-        String siteUrl = "";
-        try {
-            URL gotUrl = new URL(site);
-            siteUrl = gotUrl.getProtocol() + "://" + gotUrl.getHost() + "/";
-        } catch (MalformedURLException e) {
-            log.error("Error at parsing url, ", e);
-        }
-        Optional<SiteEntity> optional = siteRepository.findByUrlIgnoreCase(siteUrl);
         Map<LemmaEntity, Integer> newMap = new HashMap<>();
-        if (optional.isPresent()) {
-            SiteEntity siteToSearch = optional.get();
-            for (String lemma : queryMap.keySet()) {
-                Optional<LemmaEntity> optionalLemma = lemmaRepository.findBySiteAndLemma(siteToSearch, lemma);
-                optionalLemma.ifPresent(lemmaEntity -> newMap.put(lemmaEntity, lemmaEntity.getFrequency()));
+        if (!site.isEmpty()) {
+            String siteUrl = "";
+            try {
+
+                URL gotUrl = new URL(site);
+                siteUrl = gotUrl.getProtocol() + "://" + gotUrl.getHost() + "/";
+            } catch (MalformedURLException e) {
+                log.error("Error at parsing url, ", e);
             }
-            return newMap;
+
+            Optional<SiteEntity> optional = siteRepository.findByUrlIgnoreCase(siteUrl);
+
+            if (optional.isPresent()) {
+                SiteEntity siteToSearch = optional.get();
+                for (String lemma : queryMap.keySet()) {
+                    Optional<LemmaEntity> optionalLemma = lemmaRepository.findBySiteAndLemma(siteToSearch, lemma);
+                    optionalLemma.ifPresent(lemmaEntity -> newMap.put(lemmaEntity, lemmaEntity.getFrequency()));
+                }
+                return newMap;
+            }
         }
+
         for (String lemma : queryMap.keySet()) {
-            Optional<LemmaEntity> optionalLemma = lemmaRepository.findByLemma(lemma);
-            optionalLemma.ifPresent(lemmaEntity -> newMap.put(lemmaEntity, lemmaEntity.getFrequency()));
+            List<Optional<LemmaEntity>> optionalLemmas = lemmaRepository.findByLemma(lemma);
+            if (!optionalLemmas.isEmpty()) {
+                newMap.put(optionalLemmas.get(0).get(), optionalLemmas.get(0).get().getFrequency());
+            }
         }
         return newMap;
     }
@@ -221,7 +230,7 @@ public class SearchServiceImpl implements SearchService {
 
     private Map<PageEntity, Integer> sortMapReverse(Map<PageEntity, Integer> mapToSort) {
         return mapToSort.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(500)
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder())).limit(400)
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,
