@@ -100,7 +100,9 @@ public class IndexingServiceImpl implements IndexingService {
             if (optionalPage.isPresent()) {
                 PageEntity page = optionalPage.get();
 
-                new Thread(()-> new ThreadHelper(lemmaService, siteRepository, page, site)).start();
+                lemmaService.findAndSave(page);
+                lemmaService.updateLemmasFrequency(site.getId());
+                indexed(site.getId());
                 return new IndexingResponse(true);
             }
             log.warn("Page not found: {}", path);
@@ -157,5 +159,12 @@ public class IndexingServiceImpl implements IndexingService {
         lemmaRepository.deleteAllInBatch();
         pageRepository.deleteAllInBatch();
         siteRepository.deleteAllInBatch();
+    }
+
+    private void indexed(int siteId) {
+        SiteEntity site = siteRepository.findById(siteId).orElseThrow(()-> new IllegalStateException("Site not found"));
+        site.setStatus(Status.INDEXED);
+        siteRepository.save(site);
+        log.info("Indexing finished");
     }
 }

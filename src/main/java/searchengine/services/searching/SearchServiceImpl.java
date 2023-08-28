@@ -32,6 +32,7 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     public SearchResponse processSearch(String query, String site, int offset, int limit) {
+        log.info("Search for: " + query);
         Map<String, Integer> queryMap = lemmaFinder.collectLemmas(query);
         Map<LemmaEntity, Integer> mapToSort = findLemmaMatches(site, queryMap);
         Map<LemmaEntity, Integer> sortedLemmas = sortMap(mapToSort);
@@ -54,17 +55,16 @@ public class SearchServiceImpl implements SearchService {
             String snippet = cutSnippet(query, pageRelevanceEntry.getKey());
             if (!title.isEmpty() && !snippet.isEmpty()) {
                 SearchInfo instance = new SearchInfo();
-                String url = pageRelevanceEntry.getKey().getSite().getUrl();
-                instance.setSite(String.valueOf(pageRelevanceEntry.getKey().getSite()));
+                instance.setSite(pageRelevanceEntry.getKey().getSite().getUrl());
                 instance.setSiteName(pageRelevanceEntry.getKey().getSite().getName());
-                instance.setUri(url);
+                instance.setUri(pageRelevanceEntry.getKey().getPath());
                 instance.setTitle(title);
                 instance.setSnippet(snippet);
                 instance.setRelevance(pageRelevanceEntry.getValue());
                 collector.add(instance);
             }
-
         }
+        log.info("{} result(s) found", collector.size());
         return collector;
     }
 
@@ -106,7 +106,6 @@ public class SearchServiceImpl implements SearchService {
             for (Map.Entry<String, String> textEntry : lemmasToWordsInText.entrySet()) {
                 if (textEntry.getKey().equals(queryEntry.getKey())) {
                     searchWords.add(textEntry.getValue());
-
                 }
             }
         }
@@ -119,10 +118,7 @@ public class SearchServiceImpl implements SearchService {
         StringBuilder snippet = new StringBuilder();
         final int NORMAL_SIZE = 24;
         final int SPECIAL_SIZE = 12;
-        int sideStep = NORMAL_SIZE;
-        if (keywords.size()> 3) {
-            sideStep = SPECIAL_SIZE;
-        }
+        int sideStep = keywords.size() > 3 ? SPECIAL_SIZE : NORMAL_SIZE;
 
         for (String word : keywords) {
 
@@ -146,7 +142,6 @@ public class SearchServiceImpl implements SearchService {
                 String keyWord = text.substring(firstIndex, lastIndex);
                 snippet.append(before).append(keyWord).append(after);
             }
-
         }
         return snippet.toString();
     }
